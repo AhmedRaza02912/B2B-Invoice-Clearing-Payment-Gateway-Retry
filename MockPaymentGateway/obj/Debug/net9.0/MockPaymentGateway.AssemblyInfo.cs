@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MockPaymentGateway")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+58d8aa156e74c4dfa71b615d96a016c0aa138bbd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+893b886ba527c7aedf10d891055cbda3729fe9c9")]
 [assembly: System.Reflection.AssemblyProductAttribute("MockPaymentGateway")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MockPaymentGateway")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
