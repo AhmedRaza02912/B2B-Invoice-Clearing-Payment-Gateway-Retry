@@ -1,9 +1,10 @@
-namespace MockPaymentGateway.Contracts;
+using MockPaymentGateway.Models;
+namespace MockPaymentGateway.Models;
 
 // Response by the mock payment gateway.
 
 public sealed class PaymentResult
 {
-    public bool Success{get; init;}
+    public PaymentOutcome Outcome{get; init;} 
     public string Message{get; init;} = string.Empty;
 }
