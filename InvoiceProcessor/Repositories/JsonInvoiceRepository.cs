@@ -8,59 +8,67 @@ public sealed class JsonInvoiceRepository : IInvoiceRepository
 {
     private const string FilePath = "Fixtures/invoices.json";
 
-   public async Task<IReadOnlyList<Invoice>> LoadInvoicesAsync(
-    CancellationToken cancellationToken = default)
-{
-    if (!File.Exists(FilePath))
+    public async Task<IReadOnlyList<Invoice>> LoadInvoicesAsync(
+     CancellationToken cancellationToken = default)
     {
-        throw new FileNotFoundException(
-            $"Invoice fixture not found at '{FilePath}'.");
+        if (!File.Exists(FilePath))
+        {
+            throw new FileNotFoundException(
+                $"Invoice fixture not found at '{FilePath}'.");
+        }
+
+        await using var stream = File.OpenRead(FilePath);
+        var json = await File.ReadAllTextAsync(FilePath, cancellationToken);
+        Console.WriteLine(json);
+        // var invoices = await JsonSerializer.DeserializeAsync<List<Invoice>>(
+        //     stream,
+        //     cancellationToken: cancellationToken);
+
+        var invoices = JsonSerializer.Deserialize<List<Invoice>>(json);
+
+        foreach (var invoice in invoices!)
+        {
+            Console.WriteLine($"{invoice.Id} | {invoice.CustomerName} | {invoice.Amount}");
+        }
+
+        if (invoices is null)
+        {
+            return [];
+        }
+
+        ValidateInvoices(invoices);
+
+        return invoices;
     }
-
-    await using var stream = File.OpenRead(FilePath);
-
-    var invoices = await JsonSerializer.DeserializeAsync<List<Invoice>>(
-        stream,
-        cancellationToken: cancellationToken);
-
-    if (invoices is null)
-    {
-        return [];
-    }
-
-    ValidateInvoices(invoices);
-
-    return invoices;
-}
 
     private static void ValidateInvoices(IEnumerable<Invoice> invoices)
-{
-    var duplicateIds = invoices
-        .GroupBy(i => i.id)
-        .Where(g => g.Count() > 1)
-        .Select(g => g.Key);
-
-    if (duplicateIds.Any())
     {
-        throw new InvalidDataException(
-            $"Duplicate invoice IDs found: {string.Join(", ", duplicateIds)}");
-    }
+        var duplicateIds = invoices
+            .GroupBy(i => i.Id)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key);
 
-    foreach (var invoice in invoices)
-    {
-        if (invoice.Amount <= 0)
+        if (duplicateIds.Any())
         {
             throw new InvalidDataException(
-                $"Invoice {invoice.id} has an invalid amount.");
+                $"Duplicate invoice IDs found: {string.Join(", ", duplicateIds)}");
         }
 
-        if (string.IsNullOrWhiteSpace(invoice.CustomerName))
+        foreach (var invoice in invoices)
         {
-            throw new InvalidDataException(
-                $"Invoice {invoice.id} has no customer name.");
+            if (invoice.Amount <= 0)
+            {
+                throw new InvalidDataException(
+                    $"Invoice {invoice.Id} has an invalid amount.");
+            }
+
+            if (string.IsNullOrWhiteSpace(invoice.CustomerName))
+            {
+                throw new InvalidDataException(
+                    $"Invoice {invoice.Id} has no customer name.");
+            }
         }
     }
-}
 
 
 }

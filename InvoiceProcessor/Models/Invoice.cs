@@ -1,14 +1,17 @@
+using System.Text.Json.Serialization;
+
 namespace InvoiceProcessor.Models;
 
-// An invoice that needs clearence.
-
-public class Invoice
+public sealed class Invoice
 {
-    public Guid id{get; init;} // unique to invoice
+    [JsonPropertyName("id")]
+    public Guid Id { get; init; }
 
-    public string CustomerName {get; init;} = string.Empty;
+    [JsonPropertyName("customerName")]
+    public string CustomerName { get; init; } = string.Empty;
 
-    public decimal Amount{get; init;}
+    [JsonPropertyName("amount")]
+    public decimal Amount { get; init; }
 
-    public InvoiceStatus Status{get; set;} = InvoiceStatus.Pending;
+    public InvoiceStatus Status { get; set; } = InvoiceStatus.Pending;
 }
