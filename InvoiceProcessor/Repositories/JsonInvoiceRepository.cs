@@ -19,21 +19,23 @@ public sealed class JsonInvoiceRepository : IInvoiceRepository
 
         await using var stream = File.OpenRead(FilePath);
         var json = await File.ReadAllTextAsync(FilePath, cancellationToken);
-        Console.WriteLine(json);
-        // var invoices = await JsonSerializer.DeserializeAsync<List<Invoice>>(
-        //     stream,
-        //     cancellationToken: cancellationToken);
 
-        var invoices = JsonSerializer.Deserialize<List<Invoice>>(json);
+        var options = new JsonSerializerOptions
+{
+    PropertyNameCaseInsensitive = true
+};
 
-        foreach (var invoice in invoices!)
-        {
-            Console.WriteLine($"{invoice.Id} | {invoice.CustomerName} | {invoice.Amount}");
-        }
+var invoices = JsonSerializer.Deserialize<List<Invoice>>(json, options);
 
         if (invoices is null)
         {
             return [];
+        }
+
+        foreach (var invoice in invoices)
+        {
+            Console.WriteLine(
+                $"{invoice.Id} | {invoice.CustomerName} | {invoice.Amount}");
         }
 
         ValidateInvoices(invoices);
