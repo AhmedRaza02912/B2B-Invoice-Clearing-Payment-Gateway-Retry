@@ -27,51 +27,52 @@ public sealed class InvoiceRetryProcessor : IInvoiceProcessor
     public async Task ProcessAsync(
     Invoice invoice,
     CancellationToken cancellationToken = default)
-{
-    invoice.Status = InvoiceStatus.Pending;
-    invoice.RetryWindowEndsAt = DateTime.UtcNow.AddMinutes(_retryOptions.RetryWindowMinutes);
-
-    while (DateTime.UtcNow < invoice.RetryWindowEndsAt)
     {
-        invoice.AttemptCount++;
+        invoice.Status = InvoiceStatus.Pending;
+        invoice.RetryWindowEndsAt = DateTime.UtcNow.AddMinutes(_retryOptions.RetryWindowMinutes);
 
-        var response = await _paymentGateway.ProcessPaymentAsync(
-            invoice,
-            cancellationToken);
-
-        if (response.Result == PaymentResult.Success)
+        while (DateTime.UtcNow < invoice.RetryWindowEndsAt)
         {
-            invoice.Status = InvoiceStatus.Paid;
+            invoice.AttemptCount++;
 
-            _logger.LogInformation(
-                "Invoice {InvoiceId} paid successfully after {Attempts} attempt(s).",
-                invoice.Id,
-                invoice.AttemptCount);
+            var response = await _paymentGateway.ProcessPaymentAsync(
+                invoice,
+                cancellationToken);
 
-            return;
+            if (response.Result == PaymentResult.Success)
+            {
+                invoice.Status = InvoiceStatus.Paid;
+
+                _logger.LogInformation(
+        "[{Timestamp}] Invoice {InvoiceId} paid successfully after {Attempts} attempt(s).",
+        DateTime.UtcNow,
+        invoice.Id,
+        invoice.AttemptCount);
+
+                return;
+            }
+
+            invoice.Status = InvoiceStatus.Retrying;
+
+            var delay = _retryPolicy.GetDelay(invoice.AttemptCount);
+
+            invoice.NextRetryAt = DateTime.UtcNow.Add(delay);
+
+            _logger.LogWarning(
+        "[{Timestamp}] Invoice {InvoiceId} | Attempt {Attempt} failed ({Outcome}). Next retry scheduled at {NextRetry}.",
+        DateTime.UtcNow,
+        invoice.Id,
+        invoice.AttemptCount,
+        response.Result,
+        invoice.NextRetryAt);
+
+            await Task.Delay(delay, cancellationToken);
         }
 
-        invoice.Status = InvoiceStatus.Retrying;
+        invoice.Status = InvoiceStatus.Failed;
 
-        var delay = _retryPolicy.GetDelay(invoice.AttemptCount);
-
-        invoice.NextRetryAt = DateTime.UtcNow.Add(delay);
-
-        _logger.LogWarning(
-    "[{Timestamp}] Invoice {InvoiceId} | Attempt {Attempt} failed ({Outcome}). Next retry scheduled at {NextRetry}.",
-    DateTime.UtcNow,
-    invoice.Id,
-    invoice.AttemptCount,
-    response.Result,
-    invoice.NextRetryAt);
-
-        await Task.Delay(delay, cancellationToken);
+        _logger.LogError(
+            "Invoice {InvoiceId} failed after retry window expired.",
+            invoice.Id);
     }
-
-    invoice.Status = InvoiceStatus.Failed;
-
-    _logger.LogError(
-        "Invoice {InvoiceId} failed after retry window expired.",
-        invoice.Id);
-}
 }
