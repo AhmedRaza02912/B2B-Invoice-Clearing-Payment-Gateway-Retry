@@ -58,11 +58,12 @@ public sealed class InvoiceRetryProcessor : IInvoiceProcessor
         invoice.NextRetryAt = DateTime.UtcNow.Add(delay);
 
         _logger.LogWarning(
-            "Invoice {InvoiceId} | Attempt {Attempt} failed ({Result}). Retrying in {Delay} seconds.",
-            invoice.Id,
-            invoice.AttemptCount,
-            response.Result,
-            delay.TotalSeconds);
+    "[{Timestamp}] Invoice {InvoiceId} | Attempt {Attempt} failed ({Outcome}). Next retry scheduled at {NextRetry}.",
+    DateTime.UtcNow,
+    invoice.Id,
+    invoice.AttemptCount,
+    response.Result,
+    invoice.NextRetryAt);
 
         await Task.Delay(delay, cancellationToken);
     }
